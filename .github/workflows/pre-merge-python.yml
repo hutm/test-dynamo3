@@ -15,14 +15,7 @@
 
 name: NVIDIA Test Github Validation
 
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-    paths-ignore:
-      - 'deploy/Kubernetes/**'
-      - '**/*.md'
+on: [push, pull_request]
 
 jobs:
   build-test:
