@@ -21,7 +21,7 @@ on:
       - completed
 jobs:
   test-results:
-    name: Test Results
+    name: Test Results NEW
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion != 'skipped'
 
@@ -88,4 +88,11 @@ jobs:
           echo "|------------|-------|--------|--------|---------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| **Total** | $total_tests | $total_passed | $total_failed | $total_skipped | ${total_duration}s |" >> $GITHUB_STEP_SUMMARY
 
-        shell: bash
+      - name: Create or Update Test Results Comment
+        if: ${{ steps.test-results.outputs.total_count > 0 }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## Unit Test Results Summary
+            $(cat $GITHUB_STEP_SUMMARY)
