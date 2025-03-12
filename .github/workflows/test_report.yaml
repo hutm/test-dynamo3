@@ -92,15 +92,26 @@ jobs:
               skipped=$(xmllint --xpath "count(//testcase[skipped])" "$file")
               duration=$(xmllint --xpath "sum(//testcase/@time)" "$file")
 
+              # Debugging: Output values for each file
+              echo "Processing file: $file"
+              echo "Suite: $suite_name, Tests: $tests, Passed: $passed, Failed: $failed, Skipped: $skipped, Duration: $duration"
+
               echo "| $suite_name | $tests | $passed | $failed | $skipped | ${duration}s |" >> $GITHUB_STEP_SUMMARY
 
               total_tests=$((total_tests + tests))
               total_passed=$((total_passed + passed))
               total_failed=$((total_failed + failed))
               total_skipped=$((total_skipped + skipped))
+
               total_duration=$(echo "$total_duration + $duration" | bc)
             fi
           done
+
+          echo "Total tests: $total_tests"
+          echo "Total passed: $total_passed"
+          echo "Total failed: $total_failed"
+          echo "Total skipped: $total_skipped"
+          echo "Total duration: $total_duration"
 
           echo "|------------|-------|--------|--------|---------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| **Total** | $total_tests | $total_passed | $total_failed | $total_skipped | ${total_duration}s |" >> $GITHUB_STEP_SUMMARY
