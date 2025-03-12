@@ -49,6 +49,8 @@ jobs:
           total_count=0
           sudo apt-get update -y
           sudo apt-get install -y libxml2-utils
+          echo "Files to process:"
+          find artifacts/**/*.xml
           for file in artifacts/**/*.xml; do
             if [ -f "$file" ]; then
               count=$(xmllint --xpath "count(//testcase)" "$file")
