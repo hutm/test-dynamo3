@@ -13,15 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'Test Report'
-on:
-  workflow_run:
-    workflows: ['NVIDIA Test Github Validation']
-    types:
-      - completed
+name: 'Test Report NEW'
+on: [push, pull_request]
 jobs:
   test-results:
-    name: Test Results NEW
+    name: Test Results 01
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion != 'skipped'
 
@@ -44,7 +40,7 @@ jobs:
       - name: Download and Extract Artifacts
         uses: dawidd6/action-download-artifact@20319c5641d495c8a52e688b7dc5fada6c3a9fbc # v8
         with:
-           run_id: ${{ github.event.workflow_run.id }}
+           run_id: 13800192089
            path: artifacts
 
       - name: Process Test Results
