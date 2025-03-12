@@ -47,7 +47,8 @@ jobs:
         id: test-results
         run: |
           total_count=0
-
+          sudo apt-get update -y
+          sudo apt-get install -y libxml2-utils
           for file in artifacts/**/*.xml; do
             if [ -f "$file" ]; then
               count=$(xmllint --xpath "count(//testcase)" "$file")
