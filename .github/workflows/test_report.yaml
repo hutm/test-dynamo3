@@ -46,7 +46,15 @@ jobs:
       - name: Process Test Results
         id: test-results
         run: |
-          total_count=$(grep -c '<testcase' artifacts/**/*.xml || true)
+          total_count=0
+
+          for file in artifacts/**/*.xml; do
+            if [ -f "$file" ]; then
+              count=$(xmllint --xpath "count(//testcase)" "$file")
+              total_count=$((total_count + count))
+            fi
+          done
+
           echo "total_count=$total_count" >> $GITHUB_OUTPUT
 
       - name: Publish Test Results as Markdown Table
