@@ -13,11 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'Test Report NEW'
-on: [push, pull_request]
+name: 'Test Report'
+on:
+  workflow_run:
+    workflows: ['NVIDIA Test Github Validation']
+    types:
+      - completed
 jobs:
   test-results:
-    name: Test Results 01
+    name: Test Results
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion != 'skipped'
 
@@ -34,13 +38,10 @@ jobs:
       issues: read
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Download and Extract Artifacts
         uses: dawidd6/action-download-artifact@20319c5641d495c8a52e688b7dc5fada6c3a9fbc # v8
         with:
-           run_id: 13800192089
+           run_id: ${{ github.event.workflow_run.id }}
            path: artifacts
 
       - name: Process Test Results
@@ -71,7 +72,6 @@ jobs:
           echo "total_count=$total_count" >> $GITHUB_OUTPUT
 
       - name: Publish Test Results as Markdown Table
-        if: ${{ steps.test-results.outputs.total_count > 0 }}
         run: |
           echo "## Unit Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Test Suite | Tests | Passed | Failed | Skipped | Duration |" >> $GITHUB_STEP_SUMMARY
@@ -116,25 +116,11 @@ jobs:
           echo "|------------|-------|--------|--------|---------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| **Total** | $total_tests | $total_passed | $total_failed | $total_skipped | ${total_duration}s |" >> $GITHUB_STEP_SUMMARY
 
-      - name: Get Pull Request Number
-        run: |
-          response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/ai-dynamo/dynamo/pulls?head=ai-dynamo/dynamo:pvijayakrish/improve-unit-test-report)
-          echo "Response: $response"
-          if [ "$(echo "$response" | jq 'length')" -gt 0 ]; then
-            pr_number=$(echo "$response" | jq -r '.[0].number')
-            echo "PR Number: $pr_number"
-            echo "pr_number=$pr_number" >> $GITHUB_ENV
-          else
-            echo "No PR found for the given branch."
-            echo "pr_number=''" >> $GITHUB_ENV
-          fi
-        shell: /usr/bin/bash -e {0}
-
-      - name: Create or Update Test Results Comment
-        if: ${{ steps.test-results.outputs.total_count > 0 }} && ${{ steps.pr-check.outputs.pr_number != '' }}
-        uses: peter-evans/create-or-update-comment@v1
+      - name: Publish Test Results
+        if: ${{ steps.test-results.outputs.total_count > 0 }}
+        uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
         with:
-          issue-number: 106
-          body: |
-            ## Unit Test Results Summary
-            $(cat $GITHUB_STEP_SUMMARY)
+          commit: ${{ github.event.workflow_run.head_sha }}
+          event_file: artifacts/Event File/event.json
+          event_name: ${{ github.event.workflow_run.event }}
+          files: "artifacts/**/*.xml"
