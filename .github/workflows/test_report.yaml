@@ -56,11 +56,11 @@ jobs:
             if [ -f "$file" ]; then
               if [ -f "$file" ]; then
                 echo "Processing file: $file"
-                
+
                 # Count the number of <testcase> elements in the file
                 count=$(xmllint --xpath "count(//testcase)" "$file")
                 echo "Count from $file: $count"
-                
+
                 # Add to the total count
                 total_count=$((total_count + count))
               else
