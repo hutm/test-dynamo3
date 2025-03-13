@@ -36,6 +36,10 @@ jobs:
     steps:
       - name: Set test run URL
         run: |
+          echo "${{ toJson(github.event) }}"
+          echo "${{ toJson(github.event.workflow_run) }}"
+          echo "${{ (github.event.workflow_run.id) }}"
+          echo "${{ toJson(github.event.workflow_run.id) }}"
           # Set the test run URL using the GitHub repository and the run ID
           test_run_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}"
           echo "Test run URL: $test_run_url"
