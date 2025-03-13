@@ -116,12 +116,19 @@ jobs:
           echo "|------------|-------|--------|--------|---------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| **Total** | $total_tests | $total_passed | $total_failed | $total_skipped | ${total_duration}s |" >> $GITHUB_STEP_SUMMARY
 
-      - name: Get pull request number based on branch name
-        id: pr-check
+      - name: Get Pull Request Number
         run: |
-          pr_number=$(curl -s https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository }}:${{ github.ref_name }} | jq -r '.[0].number')
-          echo "PR Number: $pr_number"
-          echo "::set-output name=pr_number::$pr_number"
+          response=$(curl -s https://api.github.com/repos/ai-dynamo/dynamo/pulls?head=ai-dynamo/dynamo:pvijayakrish/improve-unit-test-report)
+          echo "Response: $response"
+          if [ "$(echo "$response" | jq 'length')" -gt 0 ]; then
+            pr_number=$(echo "$response" | jq -r '.[0].number')
+            echo "PR Number: $pr_number"
+            echo "pr_number=$pr_number" >> $GITHUB_ENV
+          else
+            echo "No PR found for the given branch."
+            echo "pr_number=''" >> $GITHUB_ENV
+          fi
+        shell: /usr/bin/bash -e {0}
 
       - name: Create or Update Test Results Comment
         if: ${{ steps.test-results.outputs.total_count > 0 }} && ${{ steps.pr-check.outputs.pr_number != '' }}
