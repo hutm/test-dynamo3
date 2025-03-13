@@ -134,7 +134,7 @@ jobs:
         if: ${{ steps.test-results.outputs.total_count > 0 }} && ${{ steps.pr-check.outputs.pr_number != '' }}
         uses: peter-evans/create-or-update-comment@v1
         with:
-          issue-number: ${{ steps.pr-check.outputs.pr_number }}
+          issue-number: 106
           body: |
             ## Unit Test Results Summary
             $(cat $GITHUB_STEP_SUMMARY)
