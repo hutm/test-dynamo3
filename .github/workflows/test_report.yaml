@@ -34,6 +34,13 @@ jobs:
       issues: read
 
     steps:
+      - name: Set test run URL
+        run: |
+          # Set the test run URL using the GitHub repository and the run ID
+          test_run_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}"
+          echo "Test run URL: $test_run_url"
+          echo "test_run_url=$test_run_url" >> $GITHUB_OUTPUT
+          
       - name: Download and Extract Artifacts
         uses: dawidd6/action-download-artifact@20319c5641d495c8a52e688b7dc5fada6c3a9fbc # v8
         with:
@@ -70,9 +77,8 @@ jobs:
       - name: Summarize Test Results as Markdown Table
         run: |
           echo "## Unit Test Results Summary" >> $GITHUB_STEP_SUMMARY
-          test_run_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}"
-          echo "This test report is a summary of the test run in workflow run: [${test_run_url}](${test_run_url})" >> $GITHUB_STEP_SUMMARY
-                    echo "| Test Suite | Tests | Passed | Failed | Skipped | Duration |" >> $GITHUB_STEP_SUMMARY
+          echo "This test report is a summary of the test run in workflow run: [${{ steps.set_test_run_url.outputs.test_run_url }}](${{ steps.set_test_run_url.outputs.test_run_url }})" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Tests | Passed | Failed | Skipped | Duration |" >> $GITHUB_STEP_SUMMARY
           echo "|------------|-------|--------|--------|---------|----------|" >> $GITHUB_STEP_SUMMARY
 
           total_tests=0
