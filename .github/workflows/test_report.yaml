@@ -74,7 +74,7 @@ jobs:
       - name: Publish Test Results as Markdown Table
         run: |
           echo "## Unit Test Results Summary" >> $GITHUB_STEP_SUMMARY
-          echo "This test report is a summary of the test run in workflow run: [${{ steps.set_test_run_url.outputs.test_run_url }}](${{ steps.set_test_run_url.outputs.test_run_url }})" >> $GITHUB_STEP_SUMMARY
+          echo "# This test report is a summary of the test run in workflow run: [${{ steps.set_test_run_url.outputs.test_run_url }}](${{ steps.set_test_run_url.outputs.test_run_url }})" >> $GITHUB_STEP_SUMMARY
 
           echo "| Test Suite | Tests | Passed | Failed | Skipped | Duration |" >> $GITHUB_STEP_SUMMARY
           echo "|------------|-------|--------|--------|---------|----------|" >> $GITHUB_STEP_SUMMARY
