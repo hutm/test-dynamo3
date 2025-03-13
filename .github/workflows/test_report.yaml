@@ -70,6 +70,7 @@ jobs:
       - name: Summarize Test Results as Markdown Table
         run: |
           echo "## Unit Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "This test report is a summary of the test run in workflow run: [${test_run_url}](${test_run_url})" >> $GITHUB_STEP_SUMMARY
           echo "| Test Suite | Tests | Passed | Failed | Skipped | Duration |" >> $GITHUB_STEP_SUMMARY
           echo "|------------|-------|--------|--------|---------|----------|" >> $GITHUB_STEP_SUMMARY
 
