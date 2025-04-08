@@ -26,9 +26,9 @@ import typing as t
 from typing import Optional
 
 import click
-import etcd3
 import rich
 import yaml
+from etcd3gw.client import Etcd3Client
 
 if t.TYPE_CHECKING:
     P = t.ParamSpec("P")  # type: ignore
@@ -270,7 +270,7 @@ def build_serve_command() -> click.Group:
         if "," in etcd_endpoint:
             etcd_endpoint = etcd_endpoint.split(",")
         host, port = etcd_endpoint.split(":")
-        etcd_client = etcd3.client(host=host, port=int(port))
+        etcd_client = Etcd3Client(host=host, port=int(port))
 
         for service, configs in service_configs.items():
             model_name = None
@@ -285,7 +285,7 @@ def build_serve_command() -> click.Group:
 
             prefix = f"/dynamo/{model_name}/{service}"
             for key, value in configs.items():
-                etcd_client.put(f"{prefix}/{key}", str(value))
+                etcd_client.put(f"{prefix}/{key}", value)
 
         serve_http(
             bento,
