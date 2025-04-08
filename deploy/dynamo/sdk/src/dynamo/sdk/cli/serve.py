@@ -26,6 +26,7 @@ import typing as t
 from typing import Optional
 
 import click
+import etcd3
 import rich
 import yaml
 
@@ -262,6 +263,30 @@ def build_serve_command() -> click.Group:
         from dynamo.sdk.cli.serving import serve_http  # type: ignore
 
         svc.inject_config()
+
+        # write parameters to etcd
+        # NOTE: not all parameters written to etcd here support dynamic updates at runtime
+        etcd_endpoint = os.getenv("ETCD_ENDPOINTS", "localhost:2379")
+        if "," in etcd_endpoint:
+            etcd_endpoint = etcd_endpoint.split(",")
+        host, port = etcd_endpoint.split(":")
+        etcd_client = etcd3.client(host=host, port=int(port))
+
+        for service, configs in service_configs.items():
+            model_name = None
+            if "model" in configs:
+                model_name = configs["model"]
+            elif "served_model_name" in configs:
+                model_name = configs["served_model_name"]
+            elif "model-name" in configs:
+                model_name = configs["model-name"]
+            else:
+                raise ValueError(f"Cannot infer model name in {service} config")
+
+            prefix = f"/dynamo/{model_name}/{service}"
+            for key, value in configs.items():
+                etcd_client.put(f"{prefix}/{key}", str(value))
+
         serve_http(
             bento,
             working_dir=working_dir,

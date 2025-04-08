@@ -15,6 +15,7 @@
 
 fastapi==0.115.6
 ftfy
+git+https://github.com/kragniz/python-etcd3.git@e58a899579ba416449c4e225b61f039457c8072a # etcd3, use source due to compatibility issue https://github.com/kragniz/python-etcd3/issues/2709
 grpcio-tools==1.66.0
 httpx
 kubernetes==32.0.1
