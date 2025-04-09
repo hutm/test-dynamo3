@@ -92,8 +92,10 @@ class EtcdKvCache:
 
         Args:
             etcd_client: The etcd client to use for operations
-            prefix: The prefix to use for all keys in this cache
+            prefix: The prefix to use for all keys in this cache.
+                EtcdKvCache will continuously watch the changes of the keys under this prefix.
             initial_values: Initial key-value pairs to populate the cache with
+                NOTE: if the key already exists, it won't be updated
 
         Returns:
             A new EtcdKvCache instance
@@ -109,6 +111,9 @@ class EtcdKvCache:
 
         Returns:
             The value as bytes if found, None otherwise
+
+        NOTE: this get is cheap because internally there is a cache that holds the latest kv pairs.
+        To prevent race condition, there is a lock when reading/writing the internal cache.
         """
         ...
 

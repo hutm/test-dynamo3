@@ -453,6 +453,9 @@ impl KvCache {
         }
 
         // For any keys in initial_values that don't exist in etcd, write them
+        // TODO: proper lease handling, this requires the first process that write to a prefix atomically
+        // create a lease and write the lease to etcd. Later processes will attach to the lease and
+        // help refresh the lease.
         for (key, value) in initial_values.iter() {
             let full_key = format!("{}{}", prefix, key);
             if !cache.contains_key(&full_key) {
