@@ -15,6 +15,7 @@
 
 use crate::{error, CancellationToken, ErrorContext, Result, Runtime};
 
+use std::sync::Arc;
 use async_nats::jetstream::kv;
 use derive_builder::Builder;
 use derive_getters::Dissolve;
@@ -425,6 +426,117 @@ mod tests {
             .kv_create_or_validate(key.to_string(), different_value.to_vec(), Some(lease_id))
             .await;
         assert!(result.is_err(), "");
+
+        Ok(())
+    }
+}
+
+
+/// A cache for etcd key-value pairs that watches for changes
+pub struct KvCache {
+    client: Client,
+    pub prefix: String,
+    cache: Arc<tokio::sync::RwLock<std::collections::HashMap<String, Vec<u8>>>>,
+    watcher: Option<PrefixWatcher>,
+}
+
+impl KvCache {
+    /// Create a new KV cache for the given prefix
+    pub async fn new(client: Client, prefix: String, initial_values: std::collections::HashMap<String, Vec<u8>>) -> Result<Self> {
+        let mut cache = std::collections::HashMap::new();
+
+        // First get all existing keys with this prefix
+        let existing_kvs = client.kv_get_prefix(&prefix).await?;
+        for kv in existing_kvs {
+            let key = String::from_utf8_lossy(kv.key()).to_string();
+            cache.insert(key, kv.value().to_vec());
+        }
+
+        // For any keys in initial_values that don't exist in etcd, write them
+        for (key, value) in initial_values.iter() {
+            let full_key = format!("{}{}", prefix, key);
+            if !cache.contains_key(&full_key) {
+                client.kv_put(&full_key, value.clone(), None).await?;
+                cache.insert(full_key, value.clone());
+            }
+        }
+
+        // Start watching for changes
+        let watcher = client.kv_get_and_watch_prefix(&prefix).await?;
+
+        let cache = Arc::new(tokio::sync::RwLock::new(cache));
+        let mut result = Self {
+            client,
+            prefix,
+            cache,
+            watcher: Some(watcher),
+        };
+
+        // Start the background watcher task
+        result.start_watcher().await?;
+
+        Ok(result)
+    }
+
+    /// Start the background watcher task
+    async fn start_watcher(&mut self) -> Result<()> {
+        if let Some(watcher) = self.watcher.take() {
+            let cache = self.cache.clone();
+            let prefix = self.prefix.clone();
+
+            tokio::spawn(async move {
+                let mut rx = watcher.rx;
+
+                while let Some(event) = rx.recv().await {
+                    match event {
+                        WatchEvent::Put(kv) => {
+                            let key = String::from_utf8_lossy(kv.key()).to_string();
+                            let value = kv.value().to_vec();
+
+                            tracing::debug!("KvCache update: {} = {:?}", key, value);
+                            let mut cache_write = cache.write().await;
+                            cache_write.insert(key, value);
+                        }
+                        WatchEvent::Delete(kv) => {
+                            let key = String::from_utf8_lossy(kv.key()).to_string();
+
+                            tracing::debug!("KvCache delete: {}", key);
+                            let mut cache_write = cache.write().await;
+                            cache_write.remove(&key);
+                        }
+                    }
+                }
+
+                tracing::info!("KvCache watcher for prefix '{}' stopped", prefix);
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Get a value from the cache
+    pub async fn get(&self, key: &str) -> Option<Vec<u8>> {
+        let full_key = format!("{}{}", self.prefix, key);
+        let cache_read = self.cache.read().await;
+        cache_read.get(&full_key).cloned()
+    }
+
+    /// Get all key-value pairs in the cache
+    pub async fn get_all(&self) -> std::collections::HashMap<String, Vec<u8>> {
+        let cache_read = self.cache.read().await;
+        cache_read.clone()
+    }
+
+    /// Update a value in both the cache and etcd
+    pub async fn put(&self, key: &str, value: Vec<u8>, lease_id: Option<i64>) -> Result<()> {
+        let full_key = format!("{}{}", self.prefix, key);
+
+        // Update etcd first
+        self.client.kv_put(&full_key, value.clone(), lease_id).await?;
+
+        // Then update local cache
+        let mut cache_write = self.cache.write().await;
+        cache_write.insert(full_key, value);
 
         Ok(())
     }
