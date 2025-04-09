@@ -28,7 +28,6 @@ from typing import Optional
 import click
 import rich
 import yaml
-from etcd3gw.client import Etcd3Client
 
 if t.TYPE_CHECKING:
     P = t.ParamSpec("P")  # type: ignore
@@ -263,29 +262,6 @@ def build_serve_command() -> click.Group:
         from dynamo.sdk.cli.serving import serve_http  # type: ignore
 
         svc.inject_config()
-
-        # write parameters to etcd
-        # NOTE: not all parameters written to etcd here support dynamic updates at runtime
-        etcd_endpoint = os.getenv("ETCD_ENDPOINTS", "localhost:2379")
-        if "," in etcd_endpoint:
-            etcd_endpoint = etcd_endpoint.split(",")
-        host, port = etcd_endpoint.split(":")
-        etcd_client = Etcd3Client(host=host, port=int(port))
-
-        for service, configs in service_configs.items():
-            model_name = None
-            if "model" in configs:
-                model_name = configs["model"]
-            elif "served_model_name" in configs:
-                model_name = configs["served_model_name"]
-            elif "model-name" in configs:
-                model_name = configs["model-name"]
-            else:
-                raise ValueError(f"Cannot infer model name in {service} config")
-
-            prefix = f"/dynamo/{model_name}/{service}"
-            for key, value in configs.items():
-                etcd_client.put(f"{prefix}/{key}", value)
 
         serve_http(
             bento,
