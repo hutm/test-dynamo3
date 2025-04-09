@@ -212,14 +212,17 @@ impl DistributedRuntime {
     }
 }
 
-
 #[pymethods]
 impl EtcdKvCache {
     #[new]
-    fn py_new(etcd_client: &EtcdClient, prefix: String, initial_values: &Bound<'_, PyDict>) -> PyResult<Self> {
+    fn py_new(
+        etcd_client: &EtcdClient,
+        prefix: String,
+        initial_values: &Bound<'_, PyDict>,
+    ) -> PyResult<Self> {
         // We can't create the KvCache here because it's async, so we'll return an error
         Err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-            "EtcdKvCache must be created using the 'new' class method"
+            "EtcdKvCache must be created using the 'new' class method",
         ))
     }
 
@@ -267,7 +270,9 @@ impl EtcdKvCache {
 
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             if let Some(value) = inner.get(&key).await {
-                Ok(Python::with_gil(|py| PyBytes::new(py, &value).to_object(py)))
+                Ok(Python::with_gil(|py| {
+                    PyBytes::new(py, &value).to_object(py)
+                }))
             } else {
                 Ok(Python::with_gil(|py| py.None()))
             }
