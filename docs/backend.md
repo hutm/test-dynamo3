@@ -201,47 +201,20 @@ requests to specific workers while minimizing a specific KV-cache based cost fun
 
 For more details, see the [KV Cache Routing Guide](docs/kv_cache_routing.md).
 
-### Disaggregated Prefill and Decode Stages
-
-For large language models, you can split the inference into prefill and decode stages:
+### Disaggregated Serving
 
 ```python
-@service(
-    dynamo={
-        "enabled": True,
-        "namespace": "dynamo",
-    },
-    image=DYNAMO_IMAGE,
-)
-class PrefillWorker:
-    def __init__(self):
-        # Initialize prefill-specific resources
-        pass
-
-    @dynamo_endpoint()
-    async def prefill(self, request: PrefillRequest):
-        # Implement prefill logic
-        pass
-
-@service(
-    dynamo={
-        "enabled": True,
-        "namespace": "dynamo",
-    },
-    image=DYNAMO_IMAGE,
-)
-class DecodeWorker:
-    def __init__(self):
-        # Initialize decode-specific resources
-        pass
-
-    @dynamo_endpoint()
-    async def decode(self, request: DecodeRequest):
-        # Implement decode logic
-        pass
+# TODO:
+# - Prefill/Decode worker snippets
+# - NIXL specifics
 ```
 
-For more information about disaggregated inference stages, see the [Dynamo Serve Guide](docs/guides/dynamo_serve.md#disaggregated-inference).
+TODO: Discuss local vs remote prefill
+TODO: Decide on calling decode (interanlly calling prefill) vs. calling prefill -> decode
+TODO: Link to disagg guide and performance tuning guide
+
+- For more information on Disaggregated Serving, see the
+  [general guide](docs/disagg_serving.md) and [performance tuning guide](docs/guides/disagg_perf_tuning.md).
 
 ## Best Practices
 
@@ -279,3 +252,4 @@ For more details about best practices and performance optimization, see the [Dyn
 
 - Check the [examples](examples/) directory for more detailed implementations
 - Refer to the [Dynamo SDK Docs](deploy/dynamo/sdk/docs/README.md) for API details.
+- For Disaggregated Serving, see the [general guide](docs/disagg_serving.md) and [performance tuning guide](docs/guides/disagg_perf_tuning.md).
